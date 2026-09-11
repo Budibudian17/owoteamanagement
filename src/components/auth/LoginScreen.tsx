@@ -37,9 +37,11 @@ export function LoginScreen() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center space-y-2">
-          <div className="mx-auto size-16 rounded-lg bg-primary flex items-center justify-center mb-4">
-            <Leaf className="size-8 text-primary-foreground" />
-          </div>
+          <img
+            src="/owotealogo.png"
+            alt="OWO TEA Logo"
+            className="mx-auto size-20 sm:size-24 rounded-lg object-contain mb-4"
+          />
           <h1 className="text-2xl font-bold tracking-tight">OWO TEA</h1>
           <p className="text-muted-foreground">Dashboard Keuangan CFD Margonda</p>
         </div>
