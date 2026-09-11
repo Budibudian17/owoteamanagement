@@ -14,11 +14,12 @@ type Props = {
   value: string;
   onChange: (key: string) => void;
   onHolidayChange?: () => void;
+  showHolidayToggle?: boolean;
 };
 
 const isSunday = (date: Date) => date.getDay() === 0;
 
-export function DateNav({ value, onChange, onHolidayChange }: Props) {
+export function DateNav({ value, onChange, onHolidayChange, showHolidayToggle = true }: Props) {
   const [open, setOpen] = useState(false);
   const [isHoliday, setIsHoliday] = useState(false);
   const currentSunday = operationalSundayKey();
@@ -126,17 +127,19 @@ export function DateNav({ value, onChange, onHolidayChange }: Props) {
         </Button>
       </div>
 
-      <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg border border-border bg-muted/50 p-3">
-        <div className="flex items-center gap-2 min-w-0">
-          <Coffee className="size-4 text-muted-foreground shrink-0" />
-          <span className="text-sm font-medium truncate">Tandai sebagai hari libur</span>
+      {showHolidayToggle && (
+        <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg border border-border bg-muted/50 p-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <Coffee className="size-4 text-muted-foreground shrink-0" />
+            <span className="text-sm font-medium truncate">Tandai sebagai hari libur</span>
+          </div>
+          <Switch
+            checked={isHoliday}
+            onCheckedChange={toggleHoliday}
+            className="data-[state=checked]:bg-warning shrink-0"
+          />
         </div>
-        <Switch
-          checked={isHoliday}
-          onCheckedChange={toggleHoliday}
-          className="data-[state=checked]:bg-warning shrink-0"
-        />
-      </div>
+      )}
     </div>
   );
 }

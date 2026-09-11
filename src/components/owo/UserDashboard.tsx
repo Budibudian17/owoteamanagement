@@ -71,9 +71,11 @@ export function UserDashboard() {
       <header className="sticky top-0 z-20 border-b border-border bg-card/90 backdrop-blur">
         <div className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="grid size-8 sm:size-9 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground">
-              <Leaf className="size-3.5 sm:size-4" />
-            </div>
+            <img
+              src="/owotealogo.png"
+              alt="OWO TEA Logo"
+              className="size-8 sm:size-9 shrink-0 rounded-lg object-contain"
+            />
             <div className="min-w-0">
               <h1 className="truncate text-sm sm:text-base font-semibold tracking-tight">OWO TEA</h1>
               <p className="truncate text-xs text-muted-foreground">View Only Mode</p>
@@ -97,7 +99,7 @@ export function UserDashboard() {
       </header>
 
       <main className="mx-auto max-w-7xl space-y-4 px-4 py-5 sm:px-6 sm:py-6">
-        <DateNav value={activeDate} onChange={handleDateChange} onHolidayChange={handleHolidayChange} />
+        <DateNav value={activeDate} onChange={handleDateChange} onHolidayChange={handleHolidayChange} showHolidayToggle={false} />
 
         {isHoliday && (
           <Card className="border-warning-soft bg-warning-soft/10">
