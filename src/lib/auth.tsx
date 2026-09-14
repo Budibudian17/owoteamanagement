@@ -10,7 +10,11 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const ADMIN_PASSWORD = import.meta.env["VITE_ADMIN_PASSWORD"] || "HilmiKeren_174168";
+const ADMIN_PASSWORD = import.meta.env["VITE_ADMIN_PASSWORD"];
+
+if (!ADMIN_PASSWORD) {
+  throw new Error("VITE_ADMIN_PASSWORD environment variable is not set. Please set it in your .env file.");
+}
 const AUTH_KEY = "owo-tea:auth";
 const AUTH_TYPE_KEY = "owo-tea:auth-type";
 
