@@ -15,7 +15,7 @@ import {
 import { toast } from "sonner";
 import { rupiah, longDate } from "@/lib/owo/format";
 import { materialTotal, memberPay, memberRemaining, isActive, type DayData } from "@/lib/owo/types";
-import { readHoliday } from "@/lib/owo/storage";
+import { readHoliday } from "@/lib/owo/supabase-storage";
 
 type Props = {
   dateKeyValue: string;

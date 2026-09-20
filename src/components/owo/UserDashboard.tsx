@@ -15,7 +15,7 @@ import {
   memberBalances,
   readOpeningPayroll,
   useDayData,
-} from "@/lib/owo/storage";
+} from "@/lib/owo/supabase-storage";
 import { summarize, materialTotal, memberPay, payrollTotal, memberRemaining, isActive } from "@/lib/owo/types";
 import { useAuth } from "@/lib/auth.tsx";
 import { toast } from "sonner";
@@ -32,7 +32,7 @@ export function UserDashboard() {
     return <Navigate to="/" />;
   }
 
-  const [activeDate, setActiveDate] = useState(operationalSundayKey());
+  const [activeDate, setActiveDate] = useState(() => operationalSundayKey());
   const { data, hydrated } = useDayData(activeDate);
   const [days, setDays] = useState<string[]>([]);
   const [isHoliday, setIsHoliday] = useState(false);
@@ -42,20 +42,37 @@ export function UserDashboard() {
 
   useEffect(() => {
     if (!hydrated) return;
-    setDays(listStoredDays());
-    setIsHoliday(readHoliday(activeDate));
-    setFund(capitalFund(activeDate));
-    setBalances(memberBalances());
-    setOpeningPayroll(readOpeningPayroll());
+    
+    const loadAsyncData = async () => {
+      try {
+        const [daysData, holidayData, fundData, balancesData, openingPayrollData] = await Promise.all([
+          listStoredDays(),
+          readHoliday(activeDate),
+          capitalFund(activeDate),
+          memberBalances(),
+          readOpeningPayroll(),
+        ]);
+        
+        setDays(daysData);
+        setIsHoliday(holidayData);
+        setFund(fundData);
+        setBalances(balancesData);
+        setOpeningPayroll(openingPayrollData);
+      } catch (error) {
+        console.error('Error loading async data:', error);
+      }
+    };
+    
+    loadAsyncData();
   }, [hydrated, activeDate]);
 
-  const handleDateChange = (key: string) => {
+  const handleDateChange = async (key: string) => {
     setActiveDate(key);
-    setIsHoliday(readHoliday(key));
+    setIsHoliday(await readHoliday(key));
   };
 
-  const handleHolidayChange = () => {
-    setIsHoliday(readHoliday(activeDate));
+  const handleHolidayChange = async () => {
+    setIsHoliday(await readHoliday(activeDate));
   };
 
   const handleLogout = () => {

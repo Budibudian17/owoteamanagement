@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { rupiah, numeric, longDate } from "@/lib/owo/format";
-import { readDay, writeDay, operationalSundayKey, shiftWeeks } from "@/lib/owo/storage";
+import { readDay, writeDay, operationalSundayKey, shiftWeeks } from "@/lib/owo/supabase-storage";
 
 type Props = {
   weeks?: number;
@@ -29,12 +29,12 @@ export function BackfillPanel({ weeks = 8, onSaved }: Props) {
   const current = operationalSundayKey();
   const keys = Array.from({ length: weeks }, (_, i) => shiftWeeks(current, -(i + 1)));
 
-  const load = () => {
+  const load = async () => {
     const next: Record<string, { cups: number; revenue: number }> = {};
-    keys.forEach((k) => {
-      const d = readDay(k);
+    for (const k of keys) {
+      const d = await readDay(k);
       next[k] = { cups: d.cups, revenue: d.revenue };
-    });
+    }
     setRows(next);
     setOpen(true);
   };
@@ -46,15 +46,15 @@ export function BackfillPanel({ weeks = 8, onSaved }: Props) {
       return { ...prev, [key]: row };
     });
 
-  const save = () => {
+  const save = async () => {
     let saved = 0;
-    keys.forEach((k) => {
+    for (const k of keys) {
       const row = rows[k];
       if (!row || (row.cups === 0 && row.revenue === 0)) return;
-      const day = readDay(k);
-      writeDay(k, { ...day, cups: row.cups, pricePerCup, revenue: row.revenue });
+      const day = await readDay(k);
+      await writeDay(k, { ...day, cups: row.cups, pricePerCup, revenue: row.revenue });
       saved++;
-    });
+    }
     setOpen(false);
     onSaved();
     toast.success(saved > 0 ? `${saved} pekan tersimpan` : "Tidak ada data untuk disimpan");

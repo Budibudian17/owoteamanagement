@@ -37,6 +37,8 @@ export type DayData = {
   manualPayroll?: number;
   /** Tandakan apakah minggu ini libur (tidak operasional). */
   isHoliday?: boolean;
+  /** Tanggal operasional (YYYY-MM-DD) */
+  date?: string;
 };
 
 export const emptyDay = (): DayData => ({
@@ -79,28 +81,29 @@ export const capitalPool = (day: DayData) =>
 export function memberPay(day: DayData, m: Member) {
   if (!isActive(m)) return 0;
   if (day.payrollMode === "manual") return memberTotal(m);
-  const weights = day.members.reduce((s, x) => s + (isActive(x) ? x.multiplier || 0 : 0), 0);
+  const weights = (day.members || []).reduce((s, x) => s + (isActive(x) ? x.multiplier || 0 : 0), 0);
   const pool = salaryPool(day);
   const share = weights > 0 ? (pool * (m.multiplier || 0)) / weights : 0;
   return share + m.bonus;
 }
 
 export const payrollTotal = (day: DayData) =>
-  day.members.reduce((s, m) => s + memberPay(day, m), 0);
+  (day.members || []).reduce((s, m) => s + memberPay(day, m), 0);
 
 /** Total modal pekan ini: rincian bahan atau angka manual. */
 export const capitalTotal = (day: DayData) =>
   day.capitalMode === "manual"
     ? Math.max(0, day.manualCapital || 0)
-    : day.materials.reduce((s, m) => s + materialTotal(m), 0);
+    : (day.materials || []).reduce((s, m) => s + materialTotal(m), 0);
 
 /** Sisa gaji yang belum diambil pada pekan ini. */
 export const memberRemaining = (day: DayData, m: Member) =>
   memberPay(day, m) - (m.withdrawn || 0);
 
 export function summarize(day: DayData) {
+  if (!day) return { capital: 0, payroll: 0, revenue: 0, profit: 0 };
   const capital = capitalTotal(day);
   const payroll = payrollTotal(day);
-  const revenue = day.revenue;
+  const revenue = day.revenue || 0;
   return { capital, payroll, revenue, profit: revenue - capital - payroll };
 }

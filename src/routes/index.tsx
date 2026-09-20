@@ -24,12 +24,12 @@ import {
   readOpeningPayroll,
   writeOpeningPayroll,
   removeDay,
-  smartDefaultSundayKey,
+  operationalSundayKey,
   readDay,
   shiftWeeks,
   useDayData,
   readHoliday,
-} from "@/lib/owo/storage";
+} from "@/lib/owo/supabase-storage";
 
 import { summarize } from "@/lib/owo/types";
 
@@ -66,7 +66,11 @@ function Dashboard() {
     return <Navigate to="/user" />;
   }
 
-  const [activeDate, setActiveDate] = useState(smartDefaultSundayKey);
+  return <DashboardContent logout={logout} />;
+}
+
+function DashboardContent({ logout }: { logout: () => void }) {
+  const [activeDate, setActiveDate] = useState(() => operationalSundayKey());
   const { data, update, reset, hydrated } = useDayData(activeDate);
   const [days, setDays] = useState<string[]>([]);
   const [balances, setBalances] = useState<Record<string, number>>({});
@@ -75,22 +79,39 @@ function Dashboard() {
   const [openingPayroll, setOpeningPayroll] = useState<Record<string, number>>({});
   const [isHoliday, setIsHoliday] = useState(false);
 
-
   useEffect(() => {
     if (!hydrated) return;
-    setDays(listStoredDays());
-    setBalances(memberBalances());
-    setFund(capitalFund(activeDate));
-    setOpening(readOpeningCapital());
-    setOpeningPayroll(readOpeningPayroll());
-    setIsHoliday(readHoliday(activeDate));
+    
+    const loadAsyncData = async () => {
+      try {
+        const [daysData, balancesData, fundData, openingData, openingPayrollData, holidayData] = await Promise.all([
+          listStoredDays(),
+          memberBalances(),
+          capitalFund(activeDate),
+          readOpeningCapital(),
+          readOpeningPayroll(),
+          readHoliday(activeDate),
+        ]);
+        
+        setDays(daysData);
+        setBalances(balancesData);
+        setFund(fundData);
+        setOpening(openingData);
+        setOpeningPayroll(openingPayrollData);
+        setIsHoliday(holidayData);
+      } catch (error) {
+        console.error('Error loading async data:', error);
+      }
+    };
+    
+    loadAsyncData();
   }, [hydrated, data, activeDate]);
 
 
   const summary = summarize(data);
 
-  const handleHolidayChange = () => {
-    setIsHoliday(readHoliday(activeDate));
+  const handleHolidayChange = async () => {
+    setIsHoliday(await readHoliday(activeDate));
   };
 
   const handleLogout = () => {
@@ -98,13 +119,14 @@ function Dashboard() {
     toast.success("Logout berhasil");
   };
 
-  const copyPrevWeekMaterials = () => {
+  const copyPrevWeekMaterials = async () => {
     const prevKey = shiftWeeks(activeDate, -1);
-    if (readHoliday(prevKey)) {
+    const isHoliday = await readHoliday(prevKey);
+    if (isHoliday) {
       toast.error("Pekan lalu adalah hari libur, tidak ada data untuk disalin");
       return;
     }
-    const prev = readDay(prevKey);
+    const prev = await readDay(prevKey);
     if (prev.materials.length === 0) {
       toast.error("Pekan lalu belum punya data bahan baku");
       return;
@@ -191,10 +213,10 @@ function Dashboard() {
                   onManualCapitalChange={(manualCapital) => update({ manualCapital })}
                   fund={fund}
                   openingCapital={opening}
-                  onOpeningCapitalChange={(v) => {
-                    writeOpeningCapital(v);
+                  onOpeningCapitalChange={async (v) => {
+                    await writeOpeningCapital(v);
                     setOpening(v);
-                    setFund(capitalFund(activeDate));
+                    setFund(await capitalFund(activeDate));
                   }}
 
                 />
@@ -203,10 +225,10 @@ function Dashboard() {
                   onChange={(patch) => update(patch)}
                   balances={balances}
                   openingPayroll={openingPayroll}
-                  onOpeningPayrollChange={(map) => {
-                    writeOpeningPayroll(map);
+                  onOpeningPayrollChange={async (map) => {
+                    await writeOpeningPayroll(map);
                     setOpeningPayroll(map);
-                    setBalances(memberBalances());
+                    setBalances(await memberBalances());
                   }}
                 />
               </div>
@@ -224,15 +246,19 @@ function Dashboard() {
                   onReset={reset}
                   isHoliday={isHoliday}
                 />
-                <BackfillPanel onSaved={() => setDays(listStoredDays())} />
+                <BackfillPanel onSaved={async () => setDays(await listStoredDays())} />
                 <HistoryPanel
                   days={days}
                   active={activeDate}
                   onSelect={setActiveDate}
-                  onDelete={(key) => {
-                    removeDay(key);
-                    setDays(listStoredDays());
-                    setBalances(memberBalances());
+                  onDelete={async (key) => {
+                    await removeDay(key);
+                    const [newDays, newBalances] = await Promise.all([
+                      listStoredDays(),
+                      memberBalances(),
+                    ]);
+                    setDays(newDays);
+                    setBalances(newBalances);
                     if (key === activeDate) reset();
                     toast.success(`Riwayat ${key} dihapus`);
                   }}
@@ -256,10 +282,14 @@ function Dashboard() {
                   days={days}
                   active={activeDate}
                   onSelect={setActiveDate}
-                  onDelete={(key) => {
-                    removeDay(key);
-                    setDays(listStoredDays());
-                    setBalances(memberBalances());
+                  onDelete={async (key) => {
+                    await removeDay(key);
+                    const [newDays, newBalances] = await Promise.all([
+                      listStoredDays(),
+                      memberBalances(),
+                    ]);
+                    setDays(newDays);
+                    setBalances(newBalances);
                     if (key === activeDate) reset();
                     toast.success(`Riwayat ${key} dihapus`);
                   }}

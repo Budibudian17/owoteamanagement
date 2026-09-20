@@ -13,9 +13,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { rupiah, longDate } from "@/lib/owo/format";
-import { readDay, readHoliday } from "@/lib/owo/storage";
+import { readDay, readHoliday } from "@/lib/owo/supabase-storage";
 import { summarize } from "@/lib/owo/types";
 import { Panel } from "./Panel";
+import { useState, useEffect } from "react";
 
 export function HistoryPanel({
   days,
@@ -28,6 +29,32 @@ export function HistoryPanel({
   onSelect: (key: string) => void;
   onDelete: (key: string) => void;
 }) {
+  const [dayDataCache, setDayDataCache] = useState<Record<string, any>>({});
+  const [holidayCache, setHolidayCache] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const loadData = async () => {
+      const dayData: Record<string, any> = {};
+      const holidays: Record<string, boolean> = {};
+      
+      for (const key of days) {
+        try {
+          dayData[key] = await readDay(key);
+          holidays[key] = await readHoliday(key);
+        } catch (error) {
+          console.error(`Error loading data for ${key}:`, error);
+          dayData[key] = null;
+          holidays[key] = false;
+        }
+      }
+      
+      setDayDataCache(dayData);
+      setHolidayCache(holidays);
+    };
+    
+    loadData();
+  }, [days]);
+
   return (
     <Panel icon={History} title="Riwayat Tanggal" description="Arsip hari operasional tersimpan">
       <div className="space-y-2">
@@ -37,8 +64,9 @@ export function HistoryPanel({
           </p>
         )}
         {days.map((key) => {
-          const { profit } = summarize(readDay(key));
-          const isHoliday = readHoliday(key);
+          const dayData = dayDataCache[key];
+          const { profit } = dayData ? summarize(dayData) : { profit: 0 };
+          const isHoliday = holidayCache[key] || false;
           return (
             <div
               key={key}

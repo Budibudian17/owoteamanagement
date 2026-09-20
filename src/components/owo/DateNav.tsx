@@ -6,7 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
-import { operationalSundayKey, shiftWeeks, readHoliday, writeHoliday } from "@/lib/owo/storage";
+import { operationalSundayKey, shiftWeeks, readHoliday, writeHoliday } from "@/lib/owo/supabase-storage";
 import { longDate } from "@/lib/owo/format";
 import { toast } from "sonner";
 
@@ -29,11 +29,15 @@ export function DateNav({ value, onChange, onHolidayChange, showHolidayToggle = 
 
   // Load holiday status when value changes
   useEffect(() => {
-    setIsHoliday(readHoliday(value));
+    const loadHoliday = async () => {
+      const holidayStatus = await readHoliday(value);
+      setIsHoliday(holidayStatus);
+    };
+    loadHoliday();
   }, [value]);
 
-  const toggleHoliday = (checked: boolean) => {
-    writeHoliday(value, checked);
+  const toggleHoliday = async (checked: boolean) => {
+    await writeHoliday(value, checked);
     setIsHoliday(checked);
     onHolidayChange?.();
     if (checked) {
