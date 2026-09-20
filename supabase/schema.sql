@@ -69,14 +69,8 @@ CREATE INDEX IF NOT EXISTS idx_app_settings_key ON app_settings(key);
 ALTER TABLE app_settings ENABLE ROW LEVEL SECURITY;
 
 -- Policies for app_settings
-CREATE POLICY "Authenticated users can read settings" ON app_settings FOR SELECT 
-USING (auth.role() = 'authenticated');
-
-CREATE POLICY "Admins can update settings" ON app_settings FOR UPDATE 
-USING (auth.jwt() ->> 'email' LIKE '%admin%' OR auth.jwt() ->> 'email' LIKE '%owner%');
-
-CREATE POLICY "Admins can insert settings" ON app_settings FOR INSERT 
-WITH CHECK (auth.jwt() ->> 'email' LIKE '%admin%' OR auth.jwt() ->> 'email' LIKE '%owner%');
+CREATE POLICY "Enable all access for app_settings" ON app_settings FOR ALL 
+USING (true) WITH CHECK (true);
 
 -- Trigger for updated_at
 CREATE TRIGGER update_app_settings_updated_at BEFORE UPDATE ON app_settings

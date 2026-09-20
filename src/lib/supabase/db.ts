@@ -307,3 +307,43 @@ export async function deleteDayData(date: Date): Promise<void> {
   const { error } = await supabase.from('day_data').delete().eq('date', dateStr)
   if (error) throw error
 }
+
+// ==================== APP SETTINGS ====================
+
+export async function getSetting(key: string): Promise<any> {
+  const { data, error } = await supabase
+    .from('app_settings')
+    .select('value')
+    .eq('key', key)
+    .maybeSingle()
+
+  if (error) {
+    console.error('Error fetching setting:', error)
+    return null
+  }
+
+  return data?.value || null
+}
+
+export async function setSetting(key: string, value: any): Promise<void> {
+  const { data: existingData } = await supabase
+    .from('app_settings')
+    .select('key')
+    .eq('key', key)
+    .maybeSingle()
+
+  if (existingData) {
+    // Update existing setting
+    const { error } = await supabase
+      .from('app_settings')
+      .update({ value })
+      .eq('key', key)
+    if (error) throw error
+  } else {
+    // Insert new setting
+    const { error } = await supabase
+      .from('app_settings')
+      .insert({ key, value })
+    if (error) throw error
+  }
+}

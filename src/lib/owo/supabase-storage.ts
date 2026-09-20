@@ -15,6 +15,8 @@ import {
   saveDayData,
   getDayDataRange,
   deleteDayData as deleteDayDataFromDB,
+  getSetting,
+  setSetting,
 } from "../supabase/db";
 
 const dateKey = (d: Date) => {
@@ -138,33 +140,41 @@ export async function listHolidays(): Promise<string[]> {
 }
 
 export async function readOpeningCapital(): Promise<number> {
-  // Sementara pakai localStorage karena Supabase RLS error
   try {
-    const raw = localStorage.getItem('owo-tea:opening-capital');
-    return raw ? Number(raw) : 0;
-  } catch {
+    const value = await getSetting('opening-capital');
+    return value !== null ? Number(value) : 0;
+  } catch (error) {
+    console.error('Error reading opening capital:', error);
     return 0;
   }
 }
 
 export async function writeOpeningCapital(value: number) {
-  // Sementara pakai localStorage karena Supabase RLS error
-  localStorage.setItem('owo-tea:opening-capital', String(value));
+  try {
+    await setSetting('opening-capital', value);
+  } catch (error) {
+    console.error('Error writing opening capital:', error);
+    throw error;
+  }
 }
 
 export async function readOpeningPayroll(): Promise<Record<string, number>> {
-  // Sementara pakai localStorage karena Supabase RLS error
   try {
-    const raw = localStorage.getItem('owo-tea:opening-payroll');
-    return raw ? JSON.parse(raw) : {};
-  } catch {
+    const value = await getSetting('opening-payroll');
+    return value && typeof value === 'object' ? value : {};
+  } catch (error) {
+    console.error('Error reading opening payroll:', error);
     return {};
   }
 }
 
 export async function writeOpeningPayroll(map: Record<string, number>) {
-  // Sementara pakai localStorage karena Supabase RLS error
-  localStorage.setItem('owo-tea:opening-payroll', JSON.stringify(map));
+  try {
+    await setSetting('opening-payroll', map);
+  } catch (error) {
+    console.error('Error writing opening payroll:', error);
+    throw error;
+  }
 }
 
 export async function memberBalances(): Promise<Record<string, number>> {
