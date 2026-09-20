@@ -251,6 +251,7 @@ export function UserDashboard() {
           active={activeDate}
           onSelect={handleDateChange}
           onDelete={() => {}} // No delete access for users
+          canDelete={false}
         />
       </main>
     </div>

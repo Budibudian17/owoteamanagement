@@ -23,11 +23,13 @@ export function HistoryPanel({
   active,
   onSelect,
   onDelete,
+  canDelete = true,
 }: {
   days: string[];
   active: string;
   onSelect: (key: string) => void;
   onDelete: (key: string) => void;
+  canDelete?: boolean;
 }) {
   const [dayDataCache, setDayDataCache] = useState<Record<string, any>>({});
   const [holidayCache, setHolidayCache] = useState<Record<string, boolean>>({});
@@ -101,29 +103,31 @@ export function HistoryPanel({
                   {rupiah(profit)}
                 </span>
               )}
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <button
-                    aria-label={`Hapus riwayat ${key}`}
-                    className="grid size-8 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-danger/10 hover:text-danger"
-                  >
-                    <Trash2 className="size-4" />
-                  </button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Hapus riwayat {longDate(key)}?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Seluruh data modal, penjualan, dan gaji pada tanggal ini akan dihapus
-                      permanen dari riwayat.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Batal</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => onDelete(key)}>Hapus</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+              {canDelete && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <button
+                      aria-label={`Hapus riwayat ${key}`}
+                      className="grid size-8 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-danger/10 hover:text-danger"
+                    >
+                      <Trash2 className="size-4" />
+                    </button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Hapus riwayat {longDate(key)}?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Seluruh data modal, penjualan, dan gaji pada tanggal ini akan dihapus
+                        permanen dari riwayat.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Batal</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => onDelete(key)}>Hapus</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
             </div>
           );
         })}
