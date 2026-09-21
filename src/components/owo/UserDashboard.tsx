@@ -12,6 +12,7 @@ import {
   listStoredDays,
   readHoliday,
   capitalFund,
+  capitalFundWithCurrentDay,
   memberBalances,
   readOpeningPayroll,
   useDayData,
@@ -42,29 +43,32 @@ export function UserDashboard() {
 
   useEffect(() => {
     if (!hydrated) return;
-    
+
     const loadAsyncData = async () => {
       try {
         const [daysData, holidayData, fundData, balancesData, openingPayrollData] = await Promise.all([
           listStoredDays(),
           readHoliday(activeDate),
-          capitalFund(activeDate),
+          capitalFund(activeDate), // This now excludes current day
           memberBalances(),
           readOpeningPayroll(),
         ]);
-        
+
         setDays(daysData);
         setIsHoliday(holidayData);
-        setFund(fundData);
         setBalances(balancesData);
         setOpeningPayroll(openingPayrollData);
+
+        // Recalculate fund with current day's data
+        const updatedFund = capitalFundWithCurrentDay(data, activeDate, fundData);
+        setFund(updatedFund);
       } catch (error) {
         console.error('Error loading async data:', error);
       }
     };
-    
+
     loadAsyncData();
-  }, [hydrated, activeDate]);
+  }, [hydrated, data, activeDate]);
 
   const handleDateChange = async (key: string) => {
     setActiveDate(key);

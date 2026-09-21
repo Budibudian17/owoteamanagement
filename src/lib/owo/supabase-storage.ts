@@ -202,18 +202,19 @@ export async function memberBalances(): Promise<Record<string, number>> {
   return balances;
 }
 
-export async function capitalFund(uptoKey?: string): Promise<{ opening: number; inflow: number; spent: number; balance: number }> {
+export async function capitalFund(excludeKey?: string): Promise<{ opening: number; inflow: number; spent: number; balance: number }> {
   const opening = await readOpeningCapital();
   let inflow = opening;
   let spent = 0;
-  
+
   const days = await listStoredDays();
   for (const key of days) {
-    if (uptoKey && key > uptoKey) continue;
-    
+    // Skip the excluded key (current day)
+    if (excludeKey && key === excludeKey) continue;
+
     const isHoliday = await readHoliday(key);
     if (isHoliday) continue;
-    
+
     const day = await readDay(key);
     inflow +=
       day.payrollMode === "share"
@@ -221,8 +222,37 @@ export async function capitalFund(uptoKey?: string): Promise<{ opening: number; 
         : Math.max(0, day.revenue - payrollTotal(day));
     spent += capitalTotal(day);
   }
-  
+
   return { opening, inflow, spent, balance: inflow - spent };
+}
+
+export function capitalFundWithCurrentDay(
+  currentDay: DayData,
+  currentDayKey: string,
+  savedFund: { opening: number; inflow: number; spent: number; balance: number }
+): { opening: number; inflow: number; spent: number; balance: number } {
+  // Check if current day is a holiday
+  const isHoliday = currentDay.isHoliday || false;
+
+  if (isHoliday) {
+    // If current day is holiday, return saved fund as is
+    return savedFund;
+  }
+
+  // Calculate what the current day contributes in real-time
+  const currentDayInflow =
+    currentDay.payrollMode === "share"
+      ? capitalPool(currentDay)
+      : Math.max(0, currentDay.revenue - payrollTotal(currentDay));
+  const currentDaySpent = capitalTotal(currentDay);
+
+  // Add current day's real-time contribution to the saved fund (which excludes current day)
+  return {
+    opening: savedFund.opening,
+    inflow: savedFund.inflow + currentDayInflow,
+    spent: savedFund.spent + currentDaySpent,
+    balance: savedFund.inflow + currentDayInflow - (savedFund.spent + currentDaySpent),
+  };
 }
 
 export function useDayData(key: string) {

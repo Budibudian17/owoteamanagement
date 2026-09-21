@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/lib/auth.tsx";
 import {
   capitalFund,
+  capitalFundWithCurrentDay,
   listStoredDays,
   memberBalances,
   readOpeningCapital,
@@ -81,29 +82,32 @@ function DashboardContent({ logout }: { logout: () => void }) {
 
   useEffect(() => {
     if (!hydrated) return;
-    
+
     const loadAsyncData = async () => {
       try {
         const [daysData, balancesData, fundData, openingData, openingPayrollData, holidayData] = await Promise.all([
           listStoredDays(),
           memberBalances(),
-          capitalFund(activeDate),
+          capitalFund(activeDate), // This now excludes current day
           readOpeningCapital(),
           readOpeningPayroll(),
           readHoliday(activeDate),
         ]);
-        
+
         setDays(daysData);
         setBalances(balancesData);
-        setFund(fundData);
         setOpening(openingData);
         setOpeningPayroll(openingPayrollData);
         setIsHoliday(holidayData);
+
+        // Recalculate fund with current day's data
+        const updatedFund = capitalFundWithCurrentDay(data, activeDate, fundData);
+        setFund(updatedFund);
       } catch (error) {
         console.error('Error loading async data:', error);
       }
     };
-    
+
     loadAsyncData();
   }, [hydrated, data, activeDate]);
 
@@ -216,7 +220,9 @@ function DashboardContent({ logout }: { logout: () => void }) {
                   onOpeningCapitalChange={async (v) => {
                     await writeOpeningCapital(v);
                     setOpening(v);
-                    setFund(await capitalFund(activeDate));
+                    const fundData = await capitalFund(activeDate);
+                    const updatedFund = capitalFundWithCurrentDay(data, activeDate, fundData);
+                    setFund(updatedFund);
                   }}
 
                 />
