@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { UserPlus, UserMinus, Users, Wallet } from "lucide-react";
+import { UserPlus, UserMinus, Users, Wallet, Copy, ClipboardPaste } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -52,12 +52,56 @@ export function PayrollPanel({
   onOpeningPayrollChange,
 }: Props) {
   const [openSaldo, setOpenSaldo] = useState(false);
+  const [copied, setCopied] = useState(false);
   const members = day.members;
   const total = payrollTotal(day);
   const totalMode = day.payrollMode === "total";
   const share = day.payrollMode === "share" || totalMode;
   const pool = salaryPool(day);
   const weights = members.reduce((s, m) => s + (isActive(m) ? m.multiplier || 0 : 0), 0);
+
+  // Cek apakah ini minggu depan (tanggal lebih baru dari minggu ini)
+  const isNextWeek = () => {
+    if (!day.date) return false;
+    const today = new Date();
+    const currentSunday = new Date(today);
+    currentSunday.setDate(today.getDate() - today.getDay());
+    const dayDate = new Date(day.date);
+    return dayDate > currentSunday;
+  };
+
+  const copyMembers = () => {
+    const data = members.map((m) => ({
+      name: m.name,
+      multiplier: m.multiplier,
+      baseSalary: m.baseSalary,
+    }));
+    navigator.clipboard.writeText(JSON.stringify(data));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const pasteMembers = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      const data = JSON.parse(text);
+      if (!Array.isArray(data)) return;
+
+      const newMembers = data.map((item) => ({
+        id: crypto.randomUUID(),
+        name: item.name || "",
+        baseSalary: item.baseSalary || 0,
+        multiplier: item.multiplier || 1,
+        bonus: 0,
+        active: true,
+        withdrawn: 0,
+      }));
+
+      onChange({ members: newMembers });
+    } catch (e) {
+      console.error("Gagal paste data:", e);
+    }
+  };
 
   const patch = (id: string, values: Partial<Member>) =>
     onChange({ members: members.map((m) => (m.id === id ? { ...m, ...values } : m)) });
@@ -190,6 +234,23 @@ export function PayrollPanel({
             </div>
           )}
         </div>
+
+        {members.length > 0 && (
+          <div className="flex gap-2">
+            {!isNextWeek() && (
+              <Button variant="outline" onClick={copyMembers} className="flex-1">
+                <Copy />
+                {copied ? "Tersalin!" : "Copy Tim"}
+              </Button>
+            )}
+            {isNextWeek() && (
+              <Button variant="outline" onClick={pasteMembers} className="flex-1">
+                <ClipboardPaste />
+                Paste Tim
+              </Button>
+            )}
+          </div>
+        )}
 
         {members.length === 0 && (
           <p className="rounded-lg border border-dashed border-border px-3 py-8 text-center text-sm text-muted-foreground">
