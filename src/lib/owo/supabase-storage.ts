@@ -177,20 +177,20 @@ export async function writeOpeningPayroll(map: Record<string, number>) {
   }
 }
 
-export async function memberBalances(): Promise<Record<string, number>> {
+export async function memberBalances(uptoKey?: string): Promise<Record<string, number>> {
   const days = await listStoredDays();
   const balances: Record<string, number> = {};
-  
+
   // Include opening payroll
   const openingPayroll = await readOpeningPayroll();
   for (const [memberId, amount] of Object.entries(openingPayroll)) {
     balances[memberId] = (balances[memberId] || 0) + amount;
   }
-  
+
   for (const key of days) {
     const isHoliday = await readHoliday(key);
     if (isHoliday) continue;
-    
+
     const day = await readDay(key);
     for (const m of day.members) {
       if (m.active !== false) {
@@ -198,8 +198,25 @@ export async function memberBalances(): Promise<Record<string, number>> {
       }
     }
   }
-  
+
   return balances;
+}
+
+export async function memberWithdrawals(uptoKey?: string): Promise<Record<string, number>> {
+  const days = await listStoredDays();
+  const withdrawals: Record<string, number> = {};
+
+  for (const key of days) {
+    const isHoliday = await readHoliday(key);
+    if (isHoliday) continue;
+
+    const day = await readDay(key);
+    for (const m of day.members) {
+      withdrawals[m.id] = (withdrawals[m.id] || 0) + (m.withdrawn || 0);
+    }
+  }
+
+  return withdrawals;
 }
 
 export async function capitalFund(excludeKey?: string): Promise<{ opening: number; inflow: number; spent: number; balance: number }> {

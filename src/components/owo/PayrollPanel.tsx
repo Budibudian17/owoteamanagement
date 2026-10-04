@@ -32,6 +32,7 @@ import {
   type DayData,
   type Member,
 } from "@/lib/owo/types";
+
 import { Panel } from "./Panel";
 
 type Props = {
@@ -39,6 +40,8 @@ type Props = {
   onChange: (patch: Partial<DayData>) => void;
   /** Saldo gaji kumulatif per anggota lintas pekan. */
   balances?: Record<string, number>;
+  /** Total yang sudah diambil per anggota lintas pekan. */
+  withdrawals?: Record<string, number>;
   /** Saldo gaji awal per anggota dari pekan-pekan lama. */
   openingPayroll?: Record<string, number>;
   onOpeningPayrollChange?: (map: Record<string, number>) => void;
@@ -48,6 +51,7 @@ export function PayrollPanel({
   day,
   onChange,
   balances = {},
+  withdrawals = {},
   openingPayroll = {},
   onOpeningPayrollChange,
 }: Props) {
@@ -403,11 +407,9 @@ export function PayrollPanel({
                 <tr>
                   <th className="px-3 py-2 font-medium">Nama</th>
                   <th className="px-3 py-2 font-medium">Performa</th>
+                  <th className="px-3 py-2 text-right font-medium">Gaji Pekan Ini</th>
+                  <th className="px-3 py-2 text-right font-medium">Total Diambil</th>
                   <th className="px-3 py-2 text-right font-medium">Total Gaji</th>
-                  <th className="px-3 py-2 text-right font-medium">Diambil</th>
-                  <th className="px-3 py-2 text-right font-medium">Sisa</th>
-                  <th className="px-3 py-2 text-right font-medium">Saldo Awal</th>
-                  <th className="px-3 py-2 text-right font-medium">Saldo Total</th>
                 </tr>
               </thead>
               <tbody>
@@ -417,17 +419,11 @@ export function PayrollPanel({
                     <td className="px-3 py-2 text-muted-foreground">
                       {!isActive(m) ? "Tidak ikut" : share ? `${m.multiplier}x` : "Manual"}
                     </td>
-                    <td className="px-3 py-2 text-right font-semibold tabular-nums">
+                    <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
                       {rupiah(memberPay(day, m))}
                     </td>
                     <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
-                      {rupiah(m.withdrawn || 0)}
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums">
-                      {rupiah(memberRemaining(day, m))}
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
-                      {rupiah(openingPayroll[m.id] || 0)}
+                      {rupiah(withdrawals[m.id] ?? 0)}
                     </td>
                     <td className="px-3 py-2 text-right font-semibold tabular-nums">
                       {rupiah(balances[m.id] ?? 0)}
@@ -442,13 +438,7 @@ export function PayrollPanel({
                     {rupiah(total)}
                   </td>
                   <td className="px-3 py-2 text-right font-semibold tabular-nums">
-                    {rupiah(members.reduce((s, m) => s + (m.withdrawn || 0), 0))}
-                  </td>
-                  <td className="px-3 py-2 text-right font-semibold tabular-nums">
-                    {rupiah(members.reduce((s, m) => s + memberRemaining(day, m), 0))}
-                  </td>
-                  <td className="px-3 py-2 text-right font-semibold tabular-nums">
-                    {rupiah(members.reduce((s, m) => s + (openingPayroll[m.id] || 0), 0))}
+                    {rupiah(members.reduce((s, m) => s + (withdrawals[m.id] ?? 0), 0))}
                   </td>
                   <td className="px-3 py-2 text-right font-semibold tabular-nums">
                     {rupiah(members.reduce((s, m) => s + (balances[m.id] ?? 0), 0))}

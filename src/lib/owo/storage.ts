@@ -174,14 +174,30 @@ export function writeOpeningPayroll(map: Record<string, number>) {
 }
 
 /** Total gaji terkumpul dikurangi yang sudah diambil, lintas seluruh pekan. */
-export function memberBalances(): Record<string, number> {
+export function memberBalances(uptoKey?: string): Record<string, number> {
   const out: Record<string, number> = { ...readOpeningPayroll() };
   for (const key of listStoredDays()) {
+    if (uptoKey && key > uptoKey) continue;
     // Skip holiday weeks
     if (readHoliday(key)) continue;
     const day = readDay(key);
     for (const m of day.members) {
       out[m.id] = (out[m.id] || 0) + memberPay(day, m) - (m.withdrawn || 0);
+    }
+  }
+  return out;
+}
+
+/** Total gaji yang sudah diambil, lintas seluruh pekan. */
+export function memberWithdrawals(uptoKey?: string): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const key of listStoredDays()) {
+    if (uptoKey && key > uptoKey) continue;
+    // Skip holiday weeks
+    if (readHoliday(key)) continue;
+    const day = readDay(key);
+    for (const m of day.members) {
+      out[m.id] = (out[m.id] || 0) + (m.withdrawn || 0);
     }
   }
   return out;

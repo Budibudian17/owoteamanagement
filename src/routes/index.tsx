@@ -20,6 +20,7 @@ import {
   capitalFundWithCurrentDay,
   listStoredDays,
   memberBalances,
+  memberWithdrawals,
   readOpeningCapital,
   writeOpeningCapital,
   readOpeningPayroll,
@@ -75,6 +76,7 @@ function DashboardContent({ logout }: { logout: () => void }) {
   const { data, update, reset, hydrated } = useDayData(activeDate);
   const [days, setDays] = useState<string[]>([]);
   const [balances, setBalances] = useState<Record<string, number>>({});
+  const [withdrawals, setWithdrawals] = useState<Record<string, number>>({});
   const [fund, setFund] = useState({ opening: 0, inflow: 0, spent: 0, balance: 0 });
   const [opening, setOpening] = useState(0);
   const [openingPayroll, setOpeningPayroll] = useState<Record<string, number>>({});
@@ -85,9 +87,10 @@ function DashboardContent({ logout }: { logout: () => void }) {
 
     const loadAsyncData = async () => {
       try {
-        const [daysData, balancesData, fundData, openingData, openingPayrollData, holidayData] = await Promise.all([
+        const [daysData, balancesData, withdrawalsData, fundData, openingData, openingPayrollData, holidayData] = await Promise.all([
           listStoredDays(),
           memberBalances(),
+          memberWithdrawals(),
           capitalFund(activeDate), // This now excludes current day
           readOpeningCapital(),
           readOpeningPayroll(),
@@ -96,6 +99,7 @@ function DashboardContent({ logout }: { logout: () => void }) {
 
         setDays(daysData);
         setBalances(balancesData);
+        setWithdrawals(withdrawalsData);
         setOpening(openingData);
         setOpeningPayroll(openingPayrollData);
         setIsHoliday(holidayData);
@@ -230,11 +234,13 @@ function DashboardContent({ logout }: { logout: () => void }) {
                   day={data}
                   onChange={(patch) => update(patch)}
                   balances={balances}
+                  withdrawals={withdrawals}
                   openingPayroll={openingPayroll}
                   onOpeningPayrollChange={async (map) => {
                     await writeOpeningPayroll(map);
                     setOpeningPayroll(map);
                     setBalances(await memberBalances());
+                    setWithdrawals(await memberWithdrawals());
                   }}
                 />
               </div>
